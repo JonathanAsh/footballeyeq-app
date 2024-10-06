@@ -1,6 +1,9 @@
 package com.example.footballeye_q
 
 data class Exercise(
-    val id: Int,
-    val name: String
+    val _id: String,
+    val name: String,
+    val ages: String,
+    val description: String,
+    val categories: List<String>
 )

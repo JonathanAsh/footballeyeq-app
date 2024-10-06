@@ -1,53 +1,72 @@
 package com.example.footballeye_q
 
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
+import com.google.gson.Gson
+import okhttp3.*
+import java.io.IOException
 
 class ExerciseDetailActivity : AppCompatActivity() {
 
+    private lateinit var backButton: Button
+    private lateinit var exerciseDescription: TextView
+    private lateinit var exerciseCategories: TextView
+    private lateinit var exerciseAges: TextView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_detail)
+        setContentView(R.layout.activity_exercise_detail)
 
-        // Set up the Toolbar
-        val toolbar: Toolbar = findViewById(R.id.toolbar)
-        setSupportActionBar(toolbar)
+        backButton = findViewById(R.id.backButton)
+        exerciseDescription = findViewById(R.id.exerciseDescription)
+        exerciseCategories = findViewById(R.id.exerciseCategories)
+        exerciseAges = findViewById(R.id.exerciseAges)
 
-        // Hide the title
-        supportActionBar?.setDisplayShowTitleEnabled(false)
+        val exerciseId = intent.getStringExtra("exerciseId")
 
-        // Enable the back arrow in the action bar
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-
-        // Set up start and stop buttons
-        val startButton = findViewById<Button>(R.id.start_button)
-        val stopButton = findViewById<Button>(R.id.stop_button)
-
-        // Handle Start button click
-        startButton.setOnClickListener {
-            // Start exercise logic here
-            Log.d("ExerciseDetailActivity", "Start button clicked")
+        // Handle the back button click
+        backButton.setOnClickListener {
+            finish()
         }
 
-        // Handle Stop button click
-        stopButton.setOnClickListener {
-            // Stop exercise logic here
-            Log.d("ExerciseDetailActivity", "Stop button clicked")
-        }
+        // Fetch the details of the exercise using the exerciseId (you can implement a method to retrieve details)
+        // Example: Use the same API or a new endpoint to fetch the exercise details
+        fetchExerciseDetails(exerciseId)
     }
 
-    // Handle the action bar back button click
-    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
-        return when (item.itemId) {
-            android.R.id.home -> {
-                // Finish the current activity and go back to the previous screen
-                finish() // This will close the current activity
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
+    private fun fetchExerciseDetails(exerciseId: String?) {
+        if (exerciseId != null) {
+            val url = "http://10.0.2.2:3000/exercise/$exerciseId" // Use the emulator IP to access the local API
+            val request = Request.Builder().url(url).build()
+
+            val client = OkHttpClient()
+            client.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    runOnUiThread {
+                        Toast.makeText(this@ExerciseDetailActivity, "Failed to fetch exercise details", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    // Ensure you're handling the response on the correct thread
+                    val responseData = response.body?.string() // This should be fine because it's on the callback thread
+
+                    runOnUiThread {
+                        if (response.isSuccessful && responseData != null) {
+                            // Parse the JSON response
+                            val exercise = Gson().fromJson(responseData, Exercise::class.java)
+                            exerciseDescription.text = exercise.description
+                            exerciseAges.text = "Ages: ${exercise.ages}"
+                            exerciseCategories.text = "Categories: ${exercise.categories.joinToString(", ")}"
+                        } else {
+                            Toast.makeText(this@ExerciseDetailActivity, "Error: ${response.code}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            })
         }
     }
 }
