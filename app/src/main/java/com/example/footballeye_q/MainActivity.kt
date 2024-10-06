@@ -1,65 +1,73 @@
 package com.example.footballeye_q
 
-import android.content.Intent
 import android.os.Bundle
-import android.widget.Button
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+
+import okhttp3.*
+import java.io.IOException
+
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 class MainActivity : AppCompatActivity() {
+
+    private val client = OkHttpClient()
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var exerciseAdapter: ExerciseAdapter
+    private lateinit var swipeRefreshLayout: SwipeRefreshLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Finding the buttons from the layout
-        val exercise1Button = findViewById<Button>(R.id.exercise1Button)
-        val exercise2Button = findViewById<Button>(R.id.exercise2Button)
-        val exercise3Button = findViewById<Button>(R.id.exercise3Button)
-        val exercise4Button = findViewById<Button>(R.id.exercise4Button)
-        val exercise5Button = findViewById<Button>(R.id.exercise5Button)
-        val exercise6Button = findViewById<Button>(R.id.exercise6Button)
+        recyclerView = findViewById(R.id.recyclerView)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        exerciseAdapter = ExerciseAdapter(emptyList()) // Initialize with an empty list
+        recyclerView.adapter = exerciseAdapter
 
+        // Find SwipeRefreshLayout by ID
+        val swipeRefreshLayout = findViewById<SwipeRefreshLayout>(R.id.swipeRefreshLayout)
 
-        // Setting click listener for Exercise 1 button
-        exercise1Button.setOnClickListener {
-            val intent = Intent(this, ExerciseDetailActivity::class.java)
-            intent.putExtra("exercise", "Exercise 1") // Passing the exercise name
-            startActivity(intent)
+        // Set up the SwipeRefreshLayout listener
+        swipeRefreshLayout.setOnRefreshListener {
+            queryLocalApi("http://10.0.2.2:3000/user")
         }
 
-        // Setting click listener for Exercise 2 button
-        exercise2Button.setOnClickListener {
-            val intent = Intent(this, Exercise2::class.java)
-            intent.putExtra("exercise", "Exercise 2") // Passing the exercise name
-            startActivity(intent)
-        }
+        // Load exercises on app start
+        queryLocalApi("http://10.0.2.2:3000/user")
+    }
 
-        // Setting click listener for Exercise 3 button
-        exercise3Button.setOnClickListener {
-            val intent = Intent(this, Exercise3::class.java)
-            intent.putExtra("exercise", "Exercise 3") // Passing the exercise name
-            startActivity(intent)
-        }
+    private fun queryLocalApi(url: String) {
+        val request = Request.Builder().url(url).build()
 
-        // Setting click listener for Exercise 4 button
-        exercise4Button.setOnClickListener {
-            val intent = Intent(this, Exercise4::class.java)
-            intent.putExtra("exercise", "Exercise 4") // Passing the exercise name
-            startActivity(intent)
-        }
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, "API Request Failed", Toast.LENGTH_SHORT).show()
+                    swipeRefreshLayout.isRefreshing = false // Stop the spinner
+                }
+            }
 
-        // Setting click listener for Exercise 5 button
-        exercise5Button.setOnClickListener {
-            val intent = Intent(this, Exercise5::class.java)
-            intent.putExtra("exercise", "Exercise 5") // Passing the exercise name
-            startActivity(intent)
-        }
-
-        // Setting click listener for Exercise 6 button
-        exercise6Button.setOnClickListener {
-            val intent = Intent(this, Exercise6::class.java)
-            intent.putExtra("exercise", "Exercise 6") // Passing the exercise name
-            startActivity(intent)
-        }
+            override fun onResponse(call: Call, response: Response) {
+                runOnUiThread {
+                    swipeRefreshLayout.isRefreshing = false // Stop the spinner
+                    if (response.isSuccessful) {
+                        val responseData = response.body?.string()
+                        // Here, parse the response data and update your RecyclerView
+                        // Assuming the JSON contains a list of exercises
+                        val exerciseType = object : TypeToken<List<Exercise>>() {}.type
+                        val exercises: List<Exercise> = Gson().fromJson(responseData, exerciseType)
+                        exerciseAdapter.updateExercises(exercises) // Update your adapter with the new data
+                        Toast.makeText(this@MainActivity, "Loaded ${exercises.size} exercises", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(this@MainActivity, "Error: ${response.code}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        })
     }
 }
