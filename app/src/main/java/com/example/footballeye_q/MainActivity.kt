@@ -34,7 +34,7 @@ class MainActivity : AppCompatActivity() {
 
         // Set up SwipeRefreshLayout listener
         swipeRefreshLayout.setOnRefreshListener {
-            queryLocalApi("http://10.0.2.2:3000/user/exercises") // Replace with your actual API URL
+            queryLocalApi("http://10.0.2.2:3000/user/exercises")
         }
 
         // Call API on initial load
@@ -59,7 +59,7 @@ class MainActivity : AppCompatActivity() {
                         val responseData = response.body?.string()
                         val exerciseType = object : TypeToken<List<Exercise>>() {}.type
                         val exercises: List<Exercise> = Gson().fromJson(responseData, exerciseType)
-                        exerciseAdapter.updateExercises(exercises) // Make sure you have this method in your adapter
+                        exerciseAdapter.updateExercises(exercises)
                     } else {
                         Toast.makeText(this@MainActivity, "Error: ${response.code}", Toast.LENGTH_SHORT).show()
                     }

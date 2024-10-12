@@ -32,8 +32,7 @@ class ExerciseDetailActivity : AppCompatActivity() {
             finish()
         }
 
-        // Fetch the details of the exercise using the exerciseId (you can implement a method to retrieve details)
-        // Example: Use the same API or a new endpoint to fetch the exercise details
+        // Fetch the details of the exercise using the exerciseId
         fetchExerciseDetails(exerciseId)
     }
 
