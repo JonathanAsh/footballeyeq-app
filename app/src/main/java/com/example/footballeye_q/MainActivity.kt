@@ -34,11 +34,11 @@ class MainActivity : AppCompatActivity() {
 
         // Set up SwipeRefreshLayout listener
         swipeRefreshLayout.setOnRefreshListener {
-            queryLocalApi("http://10.0.2.2:3000/user") // Replace with your actual API URL
+            queryLocalApi("http://10.0.2.2:3000/user/exercises") // Replace with your actual API URL
         }
 
         // Call API on initial load
-        queryLocalApi("http://10.0.2.2:3000/user")
+        queryLocalApi("http://10.0.2.2:3000/user/exercises")
     }
 
     private fun queryLocalApi(url: String) {
